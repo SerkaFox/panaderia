@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update Data</title>
+</head>
+<body>
+    <h2>Update Data in {{ table }}</h2>
+
+    {% if message %}
+        <p style="color: green;">{{ message }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% for column in columns %}
+            <label for="{{ column }}">{{ column.replace('_', ' ').title() }}:</label>
+            {% if column in dropdown_options %}
+                <select name="{{ column }}" id="{{ column }}">
+                    {% for option in dropdown_options[column] %}
+                        <option value="{{ option[0] }}" {% if current_data[column] == option[0] %}selected{% endif %}>
+                            {{ option[1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            {% elif 'fecha' in column %}
+                <input type="datetime-local" name="{{ column }}" value="{{ current_data[column] }}">
+            {% else %}
+                <input type="text" name="{{ column }}" value="{{ current_data[column] }}">
+            {% endif %}
+            <br>
+        {% endfor %}
+        <button type="submit">Update</button>
+    </form>
+    <a href="{{ url_for('insert_data', table=table) }}">Back to Table</a>
+</body>
+</html>

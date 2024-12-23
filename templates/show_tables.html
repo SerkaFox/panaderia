@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Tables</title>
+</head>
+<body>
+    <h1>Database Tables</h1>
+    {% for table, data in tables_data.items() %}
+        <h2>{{ table }}</h2>
+        <table border="1" cellpadding="5" cellspacing="0">
+            <tr>
+                {% for column in data.columns %}
+                    <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+            {% for row in data.rows %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+        <br>
+    {% endfor %}
+    <a href="{{ url_for('select_table') }}">Back to Table Selection</a>
+</body>
+</html>

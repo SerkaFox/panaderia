@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insert Data and View Tables</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cookie&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #f8e8d6;
+            margin: 0;
+            padding: 0;
+            color: #4a2e2b;
+            overflow-y: auto;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Cookie', cursive;
+            color: #9e6f49;
+        }
+
+        a {
+            color: #9e6f49;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            display: flex;
+            justify-content: left;
+            align-items: left;
+            height: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .form-container {
+            background-color: #fffaf0;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            border: 2px solid #d8a47f;
+            box-sizing: border-box;
+        }
+
+        .right-pane {
+            position: fixed;
+            top: 0;
+            right: 0%;
+            width: 60%;
+            height: 100%;
+            background-color: #fffaf0;
+            box-shadow: -4px 0 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            transition: right 0.5s ease;
+        }
+
+        .right-pane.open {
+            right: 0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-container h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        button {
+            background-color: #9e6f49;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        button i {
+            margin-right: 8px;
+        }
+
+        button:hover {
+            background-color: #7c5138;
+        }
+
+        button + button {
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #d8a47f;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #d8a47f;
+            color: #fff;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1e7da;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #d8a47f;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #4a2e2b;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="form-container">
+	    <h1>
+        <img src="{{ url_for('static', filename='images/Bun.gif') }}" 
+             alt="Baking bread" 
+             style="width: 100px; height: 100px; vertical-align: middle; border-radius: 50%;"> 
+        Insert Data into {{ table }}
+    </h1>
+<form method="POST">
+        <label for="tableSelect">Select Table:</label>
+        <select name="table" id="tableSelect" onchange="this.form.submit()">
+            {% for available_table in tables %}
+                <option value="{{ available_table }}" {% if available_table == table %}selected{% endif %}>
+                    {{ available_table }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+        {% if message %}
+            <div class="message {% if 'successfully' in message %}success{% else %}error{% endif %}">
+                {{ message }}
+            </div>
+        {% endif %}
+
+        <form method="POST" id="dataForm">
+            <input type="hidden" name="action" id="formAction" value="{{ 'update' if edit_row_data else 'insert' }}">
+            {% if edit_row_data %}
+                <input type="hidden" name="{{ primary_key_column }}" id="primaryKeyField" value="{{ edit_row_data[primary_key_column] }}">
+            {% endif %}
+            <!-- Удаляем поля, которые не нужны -->
+			{% for column in columns %}
+				{% if column != primary_key_column and column not in ['precio_neto', 'importe_total', 'id_empleados', 'id_categoria', 'id_cliente'] %} <!-- Исключаем нужные поля -->
+					<div class="form-group">
+						<label for="{{ column }}">
+							<i class="fas fa-clipboard"></i> {{ column.replace('_', ' ').title() }}:
+						</label>
+						{% if column in dropdown_options %}
+							<select name="{{ column }}" id="{{ column }}" required>
+								{% for option in dropdown_options[column] %}
+									<option value="{{ option[0] }}" {% if edit_row_data and edit_row_data[column] == option[0] %}selected{% endif %}>
+										{{ option[1] }}
+									</option>
+								{% endfor %}
+							</select>
+						{% elif 'fecha' in column %}
+							<input type="datetime-local" name="{{ column }}" id="{{ column }}" value="{{ edit_row_data[column] if edit_row_data else '' }}" required>
+						{% else %}
+							<input type="text" name="{{ column }}" id="{{ column }}" value="{{ edit_row_data[column] if edit_row_data else '' }}" required>
+						{% endif %}
+					</div>
+				{% endif %}
+			{% endfor %}
+            <button type="submit" id="formButton">
+                <i class="fas fa-save"></i> {{ 'Update' if edit_row_data else 'Add Data' }}
+            </button>
+        </form>
+
+
+
+    <button onclick="clearForm();">
+        <i class="fas fa-plus"></i> Add New Data
+    </button>
+
+    <label for="colorPicker">Color:</label>
+    <input type="color" id="colorPicker" value="#f8e8d6" title="Choose background color">
+</div>
+
+
+    </div>
+
+    <div class="right-pane" id="tablesPane">
+        <h2>Selected Table: {{ table }}</h2>
+        <table>
+            <tr>
+                <th>Actions</th>
+                {% for column in tables_data[table].columns %}
+                    <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+            {% for row in tables_data[table].rows %}
+                <tr>
+                    <td>
+                        <button onclick="window.location.href='{{ url_for('insert_data', table=table, edit_id=row[0]) }}'">Edit</button>
+                        <form method="POST" action="{{ url_for('delete_row', table=table, row_id=row[0]) }}" style="display:inline;">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+<script>
+    // Функция для определения яркости цвета
+    function getBrightness(hexColor) {
+        const rgb = hexColor
+            .replace('#', '')
+            .match(/.{2}/g)
+            .map((value) => parseInt(value, 16));
+        // Вычисление яркости (формула для восприятия человеком)
+        return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]);
+    }
+
+    // Устанавливаем начальный цвет из LocalStorage
+    const savedColor = localStorage.getItem('backgroundColor') || '#f8e8d6';
+    document.body.style.backgroundColor = savedColor;
+
+    // Функция обновления стилей всех кнопок
+    function updateButtonStyles(color) {
+        const brightness = getBrightness(color);
+        const textColor = brightness > 128 ? '#000000' : '#FFFFFF'; // Чёрный для светлого фона, белый для тёмного
+        // Обновляем заголовки таблиц
+        const tableHeaders = document.querySelectorAll('th');
+        tableHeaders.forEach(th => {
+            th.style.backgroundColor = color;
+            th.style.color = textColor;
+        });
+        // Обновляем все кнопки на странице
+        const allButtons = document.querySelectorAll('button');
+        allButtons.forEach(button => {
+            button.style.backgroundColor = color;
+            button.style.color = textColor;
+        });
+    }
+
+    // Применяем сохранённый цвет к кнопкам
+    updateButtonStyles(savedColor);
+
+    // Устанавливаем цвет палитры в соответствии с сохраненным цветом
+    const colorPicker = document.getElementById('colorPicker');
+    colorPicker.value = savedColor;
+
+    // Обработчик изменения цвета
+    colorPicker.addEventListener('input', (event) => {
+        const newColor = event.target.value;
+
+        // Изменяем фон страницы
+        document.body.style.backgroundColor = newColor;
+
+        // Изменяем цвет всех кнопок
+        updateButtonStyles(newColor);
+
+        // Сохраняем цвет в LocalStorage
+        localStorage.setItem('backgroundColor', newColor);
+    });
+</script>
+<script>
+    // Функция для управления отображением кнопки Add New Data
+    function toggleAddNewDataButton() {
+        const addDataButton = document.querySelector('#formButton'); // Кнопка Add Data или Update
+        const addNewDataButton = document.querySelector('button[onclick="clearForm();"]'); // Кнопка Add New Data
+
+        if (addDataButton) {
+            // Проверяем, является ли кнопка "Update" (по тексту)
+            const isUpdateButton = addDataButton.innerText.trim().includes('Update');
+            
+            if (isUpdateButton) {
+                // Если это кнопка Update, показываем Add New Data
+                addNewDataButton.style.display = 'block';
+            } else {
+                // Если это кнопка Add Data, скрываем Add New Data
+                addNewDataButton.style.display = 'none';
+            }
+        } else {
+            // Если кнопка Add Data или Update отсутствует, показываем Add New Data
+            addNewDataButton.style.display = 'block';
+        }
+    }
+
+    // Вызываем функцию при загрузке страницы
+    document.addEventListener('DOMContentLoaded', toggleAddNewDataButton);
+
+    // Вызываем функцию каждый раз, когда кнопки могут обновляться динамически
+    // Например, если форма или содержимое обновляются через JavaScript
+</script>
+
+
+<script>
+const form = document.getElementById('dataForm');
+const formButton = document.getElementById('formButton');
+const formAction = document.getElementById('formAction');
+const primaryKeyField = document.getElementById('primaryKeyField');
+let isSubmitting = false; // Флаг для предотвращения повторной отправки
+
+// Устанавливаем значение action перед отправкой формы
+form.addEventListener('submit', function (event) {
+    event.preventDefault(); // Предотвращаем стандартное поведение
+
+    if (isSubmitting) return; // Если форма уже отправлена, выходим
+    isSubmitting = true; // Устанавливаем флаг
+
+    if (formButton.innerText.includes('Add Data')) {
+        formAction.value = 'insert';
+    } else if (formButton.innerText.includes('Update')) {
+        formAction.value = 'update';
+    }
+
+    // Отправляем форму вручную
+    form.submit();
+});
+
+// Функция очистки формы для добавления новых данных
+function clearForm() {
+    const inputs = document.querySelectorAll('#dataForm input[type="text"], #dataForm select');
+    inputs.forEach(input => input.value = '');
+    formAction.value = 'insert';
+    formButton.innerHTML = '<i class="fas fa-save"></i> Add Data';
+    if (primaryKeyField) {
+        primaryKeyField.remove(); // Убираем поле с первичным ключом
+    }
+    isSubmitting = false; // Сбрасываем флаг на случай очистки формы
+}
+
+document.getElementById('showTablesBtn').addEventListener('click', function () {
+    document.getElementById('tablesPane').classList.add('open');
+});
+
+document.getElementById('hideTablesBtn').addEventListener('click', function () {
+    document.getElementById('tablesPane').classList.remove('open');
+});
+
+</script>
+</body>
+</html>

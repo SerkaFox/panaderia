@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Insert Data into {{ table }}</title>
+</head>
+<body>
+    <h2>Insert Data into {{ table }}</h2>
+
+    {% if message %}
+        <p style="color:green;">{{ message }}</p>
+    {% endif %}
+
+    {% if inserted_data %}
+        <h3>Inserted Data:</h3>
+        <ul>
+            {% for key, value in inserted_data.items() %}
+                <li><strong>{{ key }}:</strong> {{ value }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+<form method="POST">
+    {% for column in columns %}
+        <label for="{{ column }}">{{ column }}:</label>
+        {% if column in dropdown_options %}
+            <!-- Выпадающий список для связанных таблиц -->
+            <select name="{{ column }}" id="{{ column }}">
+                {% for option in dropdown_options[column] %}
+                    <option value="{{ option[0] }}">{{ option[1] }}</option>
+                {% endfor %}
+            </select><br>
+        {% elif 'fecha' in column %}
+            <!-- Поле ввода даты и времени -->
+            <input type="datetime-local" name="{{ column }}" id="{{ column }}" required><br>
+        {% else %}
+            <!-- Обычное текстовое поле -->
+            <input type="text" name="{{ column }}" id="{{ column }}" required><br>
+        {% endif %}
+    {% endfor %}
+    <button type="submit">Add Data</button>
+</form>
+
+
+
+    <hr>
+    <form action="{{ url_for('select_table') }}">
+        <button type="submit">Select Another Table</button>
+
+
+		<a href="{{ url_for('show_tables') }}">View All Tables</a>
+
+    </form>
+</body>
+</html>
